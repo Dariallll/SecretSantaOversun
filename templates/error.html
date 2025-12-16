@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка - Тайный Санта OVERSUN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="main-header">
+            <h1 class="title">🎅 Тайный Санта OVERSUN</h1>
+        </header>
+
+        <main class="main-content">
+            <section class="error-section">
+                <div class="error-card">
+                    <h2>⚠️ Ошибка</h2>
+                    <p class="error-message">{{ message }}</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        Вернуться на главную
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
+

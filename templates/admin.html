@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Административная панель - Тайный Санта OVERSUN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        {% if login_page %}
+        <!-- Страница входа -->
+        <header class="main-header">
+            <h1 class="title">🔐 Вход администратора</h1>
+            <a href="{{ url_for('index') }}" class="back-link">← На главную</a>
+        </header>
+
+        <main class="main-content">
+            <section class="admin-login-section">
+                {% if error %}
+                <div class="alert alert-error">{{ error }}</div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('admin_login_post') }}" class="admin-login-form">
+                    <div class="form-group">
+                        <label for="code">Код администратора</label>
+                        <input type="password" 
+                               id="code" 
+                               name="code" 
+                               required 
+                               placeholder="Введите код доступа"
+                               autofocus>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        Войти
+                    </button>
+                </form>
+            </section>
+        </main>
+        {% else %}
+        <!-- Административная панель -->
+        <header class="admin-header">
+            <h1 class="title">🔐 Административная панель</h1>
+            <div class="admin-actions">
+                <a href="{{ url_for('index') }}" class="btn btn-outline">На главную</a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">Выйти</a>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Статус игры -->
+            <section class="admin-section">
+                <h2>📊 Статус игры</h2>
+                <div class="status-display">
+                    {% if game_state.status == 'registration' %}
+                    <span class="status-badge status-open">Регистрация открыта</span>
+                    {% elif game_state.status == 'completed' %}
+                    <span class="status-badge status-completed">Жеребьёвка завершена</span>
+                    {% if game_state.drawn_at %}
+                    <p class="status-time">Проведена: {{ game_state.drawn_at }}</p>
+                    {% endif %}
+                    {% else %}
+                    <span class="status-badge status-reset">Игра сброшена</span>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Управление игрой -->
+            <section class="admin-section">
+                <h2>🎲 Управление игрой</h2>
+                <div class="game-controls">
+                    <!-- Лимит цены -->
+                    <div class="price-limit-control">
+                        <label for="priceLimit">💰 Лимит цены подарка (руб.):</label>
+                        <div class="price-limit-input-group">
+                            <input type="number" 
+                                   id="priceLimit" 
+                                   min="0" 
+                                   step="100" 
+                                   value="{{ game_state.price_limit or '' }}" 
+                                   placeholder="Не установлен">
+                            <button id="setPriceLimitBtn" class="btn btn-outline">Установить</button>
+                        </div>
+                        <div id="priceLimitResult" class="action-result"></div>
+                        {% if game_state.price_limit %}
+                        <p class="current-limit">Текущий лимит: <strong>{{ game_state.price_limit }} руб.</strong></p>
+                        {% endif %}
+                    </div>
+                    
+                    {% if game_state.status == 'registration' %}
+                    <button id="drawBtn" class="btn btn-primary btn-large">
+                        🎲 Запустить жеребьёвку
+                    </button>
+                    <div id="drawResult" class="action-result"></div>
+                    {% endif %}
+                    
+                    <button id="resetBtn" class="btn btn-danger btn-large">
+                        🔄 Сбросить игру
+                    </button>
+                    <div id="resetResult" class="action-result"></div>
+                </div>
+            </section>
+
+            <!-- Список участников -->
+            <section class="admin-section">
+                <h2>👥 Участники ({{ participants|length }})</h2>
+                {% if participants %}
+                <div class="participants-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Email</th>
+                                <th>Пожелания</th>
+                                <th>Дата регистрации</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in participants %}
+                            <tr>
+                                <td>{{ p.id }}</td>
+                                <td>{{ p.name }}</td>
+                                <td>{{ p.email }}</td>
+                                <td>
+                                    {% if p.wishlist %}
+                                    <span class="has-wishlist" title="{{ p.wishlist }}">✓</span>
+                                    {% else %}
+                                    <span class="no-wishlist">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ p.registered_at }}</td>
+                                <td>
+                                    <button class="btn-edit" onclick="editParticipant({{ p.id }})" title="Редактировать">
+                                        ✏️
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="empty-state">Участники пока не зарегистрированы</p>
+                {% endif %}
+            </section>
+
+            <!-- Распределение пар -->
+            {% if game_state.status == 'completed' and pairs %}
+            <section class="admin-section">
+                <h2>🎁 Распределение пар</h2>
+                <div class="pairs-grid">
+                    {% for pair in pairs %}
+                    <div class="pair-card">
+                        <div class="pair-giver">
+                            <span class="pair-label">Дарит:</span>
+                            <span class="pair-name">{{ pair.giver.name }}</span>
+                            <span class="pair-email">({{ pair.giver.email }})</span>
+                        </div>
+                        <div class="pair-arrow">→</div>
+                        <div class="pair-recipient">
+                            <span class="pair-label">Получает:</span>
+                            <span class="pair-name">{{ pair.recipient.name }}</span>
+                            <span class="pair-email">({{ pair.recipient.email }})</span>
+                            {% if pair.recipient.wishlist %}
+                            <div class="pair-wishlist">
+                                <strong>Пожелания:</strong> {{ pair.recipient.wishlist }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </main>
+        {% endif %}
+    </div>
+
+    <!-- Модальное окно редактирования участника -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeEditModal()">&times;</span>
+            <h2>✏️ Редактировать участника</h2>
+            <form id="editParticipantForm">
+                <input type="hidden" id="editParticipantId">
+                <div class="form-group">
+                    <label for="editName">Имя и фамилия *</label>
+                    <input type="text" id="editName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email / Внутренний ID *</label>
+                    <input type="email" id="editEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="editWishlist">Пожелания к подарку</label>
+                    <textarea id="editWishlist" rows="4"></textarea>
+                </div>
+                <div id="editResult" class="action-result"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% if not login_page %}
+    <script>
+        // Обработка кнопки жеребьёвки
+        document.getElementById('drawBtn')?.addEventListener('click', async function() {
+            const resultDiv = document.getElementById('drawResult');
+            resultDiv.innerHTML = '<p>Выполняется жеребьёвка...</p>';
+            
+            try {
+                const response = await fetch('/api/admin/draw', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<p class="success">${data.message}</p>`;
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    resultDiv.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">Ошибка при выполнении жеребьёвки</p>';
+            }
+        });
+
+        // Обработка кнопки сброса
+        document.getElementById('resetBtn')?.addEventListener('click', async function() {
+            if (!confirm('Вы уверены, что хотите сбросить игру? Все данные будут удалены!')) {
+                return;
+            }
+            
+            const resultDiv = document.getElementById('resetResult');
+            resultDiv.innerHTML = '<p>Выполняется сброс...</p>';
+            
+            try {
+                const response = await fetch('/api/admin/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<p class="success">${data.message}</p>`;
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    resultDiv.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">Ошибка при сбросе игры</p>';
+            }
+        });
+
+        // Обработка установки лимита цены
+        document.getElementById('setPriceLimitBtn')?.addEventListener('click', async function() {
+            const priceLimit = document.getElementById('priceLimit').value;
+            const resultDiv = document.getElementById('priceLimitResult');
+            
+            if (!priceLimit || priceLimit < 0) {
+                resultDiv.innerHTML = '<p class="error">Введите корректный лимит цены</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Устанавливается лимит...</p>';
+            
+            try {
+                const response = await fetch('/api/admin/price-limit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ price_limit: parseFloat(priceLimit) })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<p class="success">${data.message}</p>`;
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    resultDiv.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">Ошибка при установке лимита цены</p>';
+            }
+        });
+
+        // Функция редактирования участника
+        window.editParticipant = async function(participantId) {
+            const modal = document.getElementById('editModal');
+            const resultDiv = document.getElementById('editResult');
+            resultDiv.innerHTML = '';
+            
+            // Загружаем данные участника
+            try {
+                const response = await fetch(`/api/admin/participant/${participantId}`);
+                const data = await response.json();
+                
+                if (data.participant) {
+                    document.getElementById('editParticipantId').value = data.participant.id;
+                    document.getElementById('editName').value = data.participant.name;
+                    document.getElementById('editEmail').value = data.participant.email;
+                    document.getElementById('editWishlist').value = data.participant.wishlist || '';
+                    modal.style.display = 'block';
+                } else {
+                    resultDiv.innerHTML = '<p class="error">Участник не найден</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">Ошибка при загрузке данных участника</p>';
+            }
+        };
+
+        // Закрытие модального окна
+        window.closeEditModal = function() {
+            document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editParticipantForm').reset();
+            document.getElementById('editResult').innerHTML = '';
+        };
+
+        // Обработка формы редактирования
+        document.getElementById('editParticipantForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const participantId = document.getElementById('editParticipantId').value;
+            const name = document.getElementById('editName').value.trim();
+            const email = document.getElementById('editEmail').value.trim();
+            const wishlist = document.getElementById('editWishlist').value.trim();
+            const resultDiv = document.getElementById('editResult');
+            
+            if (!name || !email) {
+                resultDiv.innerHTML = '<p class="error">Заполните все обязательные поля</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Сохранение...</p>';
+            
+            try {
+                const response = await fetch(`/api/admin/participant/${participantId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        wishlist: wishlist
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<p class="success">${data.message}</p>`;
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    resultDiv.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">Ошибка при сохранении данных</p>';
+            }
+        });
+
+        // Закрытие модального окна при клике вне его
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target == modal) {
+                closeEditModal();
+            }
+        };
+    </script>
+    {% endif %}
+</body>
+</html>
+

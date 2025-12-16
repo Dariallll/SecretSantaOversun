@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - Тайный Санта OVERSUN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="main-header">
+            <h1 class="title">🎅 Тайный Санта OVERSUN</h1>
+            <a href="{{ url_for('index') }}" class="back-link">← На главную</a>
+        </header>
+
+        <main class="main-content">
+            <section class="participant-section">
+                <h2>Личный кабинет</h2>
+                
+                <div class="participant-info">
+                    <h3>Ваши данные:</h3>
+                    <p><strong>Имя:</strong> {{ participant.name }}</p>
+                    <p><strong>Email:</strong> {{ participant.email }}</p>
+                    {% if participant.wishlist %}
+                    <p><strong>Ваши пожелания:</strong> {{ participant.wishlist }}</p>
+                    {% endif %}
+                </div>
+
+                {% if game_state and game_state.status == 'completed' %}
+                    {% if recipient_info and recipient_info.recipient_name %}
+                    <div class="recipient-card">
+                        <div class="card-header">
+                            <h3>🎁 Ваш получатель подарка</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="recipient-name">
+                                <span class="label">Имя:</span>
+                                <span class="value">{{ recipient_info.recipient_name }}</span>
+                            </div>
+                            <div class="recipient-email">
+                                <span class="label">Email:</span>
+                                <span class="value">{{ recipient_info.recipient_email }}</span>
+                            </div>
+                            {% if recipient_info.recipient_wishlist %}
+                            <div class="recipient-wishlist">
+                                <span class="label">Пожелания к подарку:</span>
+                                <p class="value">{{ recipient_info.recipient_wishlist }}</p>
+                            </div>
+                            {% else %}
+                            <div class="recipient-wishlist">
+                                <p class="no-wishlist">Пожелания не указаны</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="greeting-card">
+                        <h3>🎄 Новогоднее поздравление</h3>
+                        <p>
+                            Поздравляем! Вы стали Тайным Сантой для 
+                            <strong>{{ recipient_info.recipient_name }}</strong>!
+                        </p>
+                        <p>
+                            Подготовьте подарок и вручите его в назначенный день. 
+                            Сохраните интригу до момента вручения!
+                        </p>
+                        {% if game_state and game_state.price_limit %}
+                        <p class="price-limit-reminder">
+                            💰 <strong>Лимит цены подарка:</strong> {{ game_state.price_limit }} руб.
+                        </p>
+                        {% endif %}
+                        <p class="reminder">
+                            ⏰ Напоминание: не забудьте вручить подарок до Нового года!
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Информация о получателе пока недоступна.
+                    </div>
+                    {% endif %}
+                {% else %}
+                <div class="waiting-card">
+                    <h3>⏳ Ожидание жеребьёвки</h3>
+                    <p>
+                        Вы успешно зарегистрированы! 
+                        После того, как администратор проведет жеребьёвку, 
+                        здесь появится информация о том, кому вы будете дарить подарок.
+                    </p>
+                    <p class="hint">
+                        Сохраните эту страницу в закладки, чтобы вернуться позже.
+                    </p>
+                </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>
+

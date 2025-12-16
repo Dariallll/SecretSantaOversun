@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Тайный Санта OVERSUN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="main-header">
+            <h1 class="title">🎅 Тайный Санта OVERSUN</h1>
+            <a href="{{ url_for('index') }}" class="back-link">← На главную</a>
+        </header>
+
+        <main class="main-content">
+            <section class="register-section">
+                <h2>Регистрация участника</h2>
+                
+                {% if error %}
+                <div class="alert alert-error">{{ error }}</div>
+                {% endif %}
+
+                {% if game_state and game_state.status == 'completed' %}
+                <div class="alert alert-warning">
+                    Регистрация закрыта. Жеребьёвка уже проведена.
+                </div>
+                {% else %}
+                <form method="POST" action="{{ url_for('register') }}" class="register-form">
+                    <div class="form-group">
+                        <label for="name">Имя и фамилия *</label>
+                        <input type="text" 
+                               id="name" 
+                               name="name" 
+                               required 
+                               placeholder="Иван Иванов">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email / Внутренний ID *</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               required 
+                               placeholder="ivan.ivanov@oversun.ru">
+                        <small>Этот email будет использован для входа в личный кабинет</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wishlist">Пожелания к подарку</label>
+                        <textarea id="wishlist" 
+                                  name="wishlist" 
+                                  rows="4" 
+                                  placeholder="Опишите, что бы вы хотели получить в подарок..."></textarea>
+                        <small>Необязательное поле. Помогите вашему Тайному Санте выбрать подарок!</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        🎁 Зарегистрироваться
+                    </button>
+                </form>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тайный Санта OVERSUN 🎅</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="main-header">
+            <h1 class="title">🎅 Тайный Санта OVERSUN</h1>
+            <p class="subtitle">Новогодняя корпоративная игра</p>
+        </header>
+
+        <main class="main-content">
+            <section class="intro-section">
+                <h2>Добро пожаловать!</h2>
+                <p class="description">
+                    Присоединяйтесь к новогодней игре "Тайный Санта"! 
+                    Зарегистрируйтесь, укажите свои пожелания к подарку, 
+                    и после жеребьёвки вы узнаете, кому будете дарить подарок.
+                </p>
+            </section>
+
+            <section class="rules-section">
+                <h3>📋 Правила участия:</h3>
+                <ul class="rules-list">
+                    <li>Зарегистрируйтесь в системе, указав свои данные</li>
+                    <li>Опишите свои пожелания к подарку (необязательно)</li>
+                    <li>После жеребьёвки вы узнаете, кому дарите подарок</li>
+                    <li>Вручите подарок в назначенный день</li>
+                    <li>Сохраните интригу до момента вручения!</li>
+                </ul>
+                {% if game_state and game_state.price_limit %}
+                <div class="price-limit-info">
+                    <p><strong>💰 Лимит цены подарка:</strong> <span class="price-value">{{ game_state.price_limit }} руб.</span></p>
+                </div>
+                {% endif %}
+            </section>
+
+            {% if game_state and game_state.status == 'completed' %}
+            <div class="status-badge status-completed">
+                ⚠️ Регистрация закрыта. Жеребьёвка уже проведена.
+            </div>
+            {% elif game_state and game_state.status == 'registration' %}
+            <div class="status-badge status-open">
+                ✅ Регистрация открыта
+            </div>
+            {% endif %}
+
+            <div class="action-buttons">
+                {% if game_state and game_state.status == 'registration' %}
+                <a href="{{ url_for('register') }}" class="btn btn-primary">
+                    🎁 Принять участие
+                </a>
+                {% endif %}
+                
+                <a href="{{ url_for('admin_login') }}" class="btn btn-secondary">
+                    🔐 Вход администратора
+                </a>
+            </div>
+
+            <div class="check-participant">
+                <h3>Уже зарегистрированы?</h3>
+                <form id="checkForm" class="check-form">
+                    <input type="email" 
+                           id="checkEmail" 
+                           placeholder="Введите ваш email" 
+                           required>
+                    <button type="submit" class="btn btn-outline">Проверить</button>
+                </form>
+                <div id="checkResult" class="check-result"></div>
+            </div>
+        </main>
+
+        <footer class="main-footer">
+            <p>&copy; 2025 OVERSUN. Новогодняя игра "Тайный Санта"</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+
